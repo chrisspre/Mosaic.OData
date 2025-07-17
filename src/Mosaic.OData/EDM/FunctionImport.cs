@@ -3,7 +3,7 @@ namespace Mosaic.OData.EDM;
 /// <summary>
 /// Represents an EDM FunctionImport element.
 /// </summary>
-public sealed class FunctionImport : EdmElementBase, IModelElementFactory<FunctionImport>
+public sealed class FunctionImport : EdmElement, IModelElementFactory<FunctionImport>
 {
     private FunctionImport(string name, string function, string? entitySet, bool includeInServiceDocument) : base(name)
     {
@@ -45,28 +45,28 @@ public sealed class FunctionImport : EdmElementBase, IModelElementFactory<Functi
     /// <inheritdoc />
     public static FunctionImport Create(ModelBuilderContext context, IReadOnlyDictionary<string, string> attributes)
     {
-        var name = attributes["Name"];
-        var function = attributes["Function"];
+        var name = attributes.GetRequiredOrDefault("Name", $"<MissingName_{Guid.NewGuid():N}>");
+        var function = attributes.GetRequiredOrDefault("Function", "<MissingFunction>");
         var entitySet = attributes.GetValueOrDefault("EntitySet");
-        var includeInServiceDocument = bool.Parse(attributes.GetValueOrDefault("IncludeInServiceDocument", "true"));
+        var includeInServiceDocument = attributes.ParseOrDefault("IncludeInServiceDocument", true);
 
         var functionImport = new FunctionImport(name, function, entitySet, includeInServiceDocument);
 
         // Handle Function reference resolution (qualified unbound function name)
-        context.AddDeferredAction(new DeferredAction(functionImport, resolutionContext =>
+        context.AddDeferredAction(500, functionImport, resolutionContext =>
         {
             var functionElement = resolutionContext.ResolveReference<Function>(function);
             // Function resolution is for validation purposes - we keep the string reference
-        }), priority: 500);
+        });
 
         // Handle EntitySet reference resolution (relative to container)
         if (entitySet != null)
         {
-            context.AddDeferredAction(new DeferredAction(functionImport, resolutionContext =>
+            context.AddDeferredAction(500, functionImport, resolutionContext =>
             {
                 var entitySetElement = resolutionContext.ResolveRelativeReference<EntitySet>(functionImport, entitySet);
                 // EntitySet resolution is for validation purposes - we keep the string reference
-            }), priority: 500);
+            });
         }
 
         return functionImport;

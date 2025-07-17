@@ -3,7 +3,7 @@ namespace Mosaic.OData.EDM;
 /// <summary>
 /// Represents an EDM Property element.
 /// </summary>
-public sealed class Property : EdmElementBase, IModelElementFactory<Property>
+public sealed class Property : EdmElement, IModelElementFactory<Property>
 {
     private Property(string name, string type, bool nullable, string? defaultValue, int? maxLength, int? precision, Scale? scale, bool? unicode, string? srid) : base(name)
     {
@@ -80,22 +80,13 @@ public sealed class Property : EdmElementBase, IModelElementFactory<Property>
     /// <inheritdoc />
     public static Property Create(ModelBuilderContext context, IReadOnlyDictionary<string, string> attributes)
     {
-        var name = attributes["Name"];
-        var type = attributes["Type"];
-        var nullable = bool.Parse(attributes.GetValueOrDefault("Nullable", "true"));
+        var name = attributes.GetRequiredOrDefault("Name", $"<MissingName_{Guid.NewGuid():N}>");
+        var type = attributes.GetRequiredOrDefault("Type", "<MissingType>");
+        var nullable = attributes.ParseOrDefault("Nullable", true);
         var defaultValue = attributes.GetValueOrDefault("DefaultValue");
 
-        var maxLength = attributes.TryGetValue("MaxLength", out var maxLengthStr) && int.TryParse(maxLengthStr, out var parsedMaxLength)
-            ? (int?)parsedMaxLength
-            : null;
-
-        var precision = attributes.TryGetValue("Precision", out var precisionStr) && int.TryParse(precisionStr, out var parsedPrecision)
-            ? (int?)parsedPrecision
-            : null;
-
-        // var scale = attributes.TryGetValue("Scale", out var scaleStr) && int.TryParse(scaleStr, out var parsedScale)
-        //     ? (int?)parsedScale
-        //     : null;
+        var maxLength = attributes.ParseOrDefault<int>("MaxLength");
+        var precision = attributes.ParseOrDefault<int>("Precision");
         var scale = attributes.ParseOrDefault<Scale>("Scale");
         var unicode = attributes.ParseOrDefault<bool>("Unicode");
 

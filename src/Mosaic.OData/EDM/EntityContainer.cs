@@ -3,7 +3,7 @@ namespace Mosaic.OData.EDM;
 /// <summary>
 /// Represents an EDM EntityContainer element.
 /// </summary>
-public sealed class EntityContainer : EdmElementBase, IModelElementFactory<EntityContainer>
+public sealed class EntityContainer : EdmElement, IModelElementFactory<EntityContainer>
 {
     private EntityContainer? _extends;
 
@@ -54,14 +54,14 @@ public sealed class EntityContainer : EdmElementBase, IModelElementFactory<Entit
         // Handle Extends reference resolution
         if (extendsReference != null)
         {
-            context.AddDeferredAction(new DeferredAction(container, resolutionContext =>
+            context.AddDeferredAction(100, container, resolutionContext =>
             {
                 var extendsContainer = resolutionContext.ResolveReference<EntityContainer>(extendsReference);
                 if (extendsContainer != null)
                 {
                     container.SetExtends(extendsContainer);
                 }
-            }), priority: 100); // Lower priority to ensure containers are created first
+            }); // Lower priority to ensure containers are created first
         }
 
         return container;

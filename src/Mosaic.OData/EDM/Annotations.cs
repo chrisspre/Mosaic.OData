@@ -3,7 +3,7 @@ namespace Mosaic.OData.EDM;
 /// <summary>
 /// Represents an EDM Annotations element.
 /// </summary>
-public sealed class Annotations : EdmElementBase, IModelElementFactory<Annotations>
+public sealed class Annotations : EdmElement, IModelElementFactory<Annotations>
 {
     private Path<IEdmElement>? _target;
 
@@ -52,20 +52,20 @@ public sealed class Annotations : EdmElementBase, IModelElementFactory<Annotatio
     /// <inheritdoc />
     public static Annotations Create(ModelBuilderContext context, IReadOnlyDictionary<string, string> attributes)
     {
-        var targetExpression = attributes["Target"];
+        var targetExpression = attributes.GetRequiredOrDefault("Target", "<MissingTarget>");
         var qualifier = attributes.GetValueOrDefault("Qualifier");
 
         var annotations = new Annotations(targetExpression, qualifier);
 
         // Handle Target path resolution
-        context.AddDeferredAction(new DeferredAction(annotations, resolutionContext =>
+        context.AddDeferredAction(600, annotations, resolutionContext =>
         {
             var target = resolutionContext.ResolvePath<IEdmElement>(targetExpression, annotations);
             if (target != null)
             {
                 annotations.SetTarget(target);
             }
-        }), priority: 600); // Higher priority since it depends on all other elements being established
+        }); // Higher priority since it depends on all other elements being established
 
         return annotations;
     }

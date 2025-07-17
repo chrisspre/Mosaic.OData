@@ -3,7 +3,7 @@ namespace Mosaic.OData.EDM;
 /// <summary>
 /// Represents an EDM Action element.
 /// </summary>
-public sealed class Action : EdmElementBase, IModelElementFactory<Action>
+public sealed class Action : EdmElement, IModelElementFactory<Action>
 {
     private Path<IEdmElement>? _entitySetPath;
 
@@ -62,14 +62,14 @@ public sealed class Action : EdmElementBase, IModelElementFactory<Action>
         // Handle EntitySetPath resolution if present
         if (entitySetPathExpression != null)
         {
-            context.AddDeferredAction(new DeferredAction(action, resolutionContext =>
+            context.AddDeferredAction(400, action, resolutionContext =>
             {
                 var entitySetPath = resolutionContext.ResolvePath<IEdmElement>(entitySetPathExpression, action);
                 if (entitySetPath != null)
                 {
                     action.SetEntitySetPath(entitySetPath);
                 }
-            }), priority: 400); // Higher priority since it depends on other elements being established
+            }); // Higher priority since it depends on other elements being established
         }
 
         return action;

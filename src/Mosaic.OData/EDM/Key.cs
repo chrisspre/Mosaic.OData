@@ -3,7 +3,7 @@ namespace Mosaic.OData.EDM;
 /// <summary>
 /// Represents an EDM Key element.
 /// </summary>
-public sealed class Key : EdmElementBase, IModelElementFactory<Key>
+public sealed class Key : EdmElement, IModelElementFactory<Key>
 {
     private Key() : base("Key")
     {

@@ -3,7 +3,7 @@ namespace Mosaic.OData.EDM;
 /// <summary>
 /// Represents an EDM TypeDefinition element.
 /// </summary>
-public sealed class TypeDefinition : EdmElementBase, IModelElementFactory<TypeDefinition>
+public sealed class TypeDefinition : EdmElement, IModelElementFactory<TypeDefinition>
 {
     private TypeDefinition(string name, string underlyingType) : base(name)
     {
@@ -32,8 +32,8 @@ public sealed class TypeDefinition : EdmElementBase, IModelElementFactory<TypeDe
     /// <inheritdoc />
     public static TypeDefinition Create(ModelBuilderContext context, IReadOnlyDictionary<string, string> attributes)
     {
-        var name = attributes["Name"];
-        var underlyingType = attributes["UnderlyingType"];
+        var name = attributes.GetRequiredOrDefault("Name", $"<MissingName_{Guid.NewGuid():N}>");
+        var underlyingType = attributes.GetRequiredOrDefault("UnderlyingType", "<MissingUnderlyingType>");
 
         return new TypeDefinition(name, underlyingType);
     }

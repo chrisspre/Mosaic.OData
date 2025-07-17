@@ -1,3 +1,5 @@
+using Serilog;
+
 namespace Mosaic.OData.EDM;
 
 /// <summary>
@@ -36,7 +38,7 @@ public class ModelResolutionContext
             return typedElement;
         }
 
-        Console.WriteLine($"Warning: Unable to resolve reference path '{path}' to element of type {typeof(T).Name}.");
+        Log.Warning("Unable to resolve reference path {Path} to element of type {ElementType}", path, typeof(T).Name);
         return null;
     }
 
@@ -60,7 +62,7 @@ public class ModelResolutionContext
             var childElement = currentElement.Children.FirstOrDefault(c => c.TargetPathSegment?.EndsWith(segment) == true);
             if (childElement == null)
             {
-                Console.WriteLine($"Warning: Unable to resolve path segment '{segment}' from element '{currentElement.Name}'.");
+                Log.Warning("Unable to resolve path segment {Segment} from element {ElementName}", segment, currentElement.Name);
                 return null;
             }
             
@@ -70,7 +72,7 @@ public class ModelResolutionContext
 
         if (elements.LastOrDefault() is not T targetElement)
         {
-            Console.WriteLine($"Warning: Path '{pathExpression}' does not resolve to an element of type {typeof(T).Name}.");
+            Log.Warning("Path {PathExpression} does not resolve to an element of type {ElementType}", pathExpression, typeof(T).Name);
             return null;
         }
 
@@ -130,14 +132,16 @@ public class ModelResolutionContext
     /// <param name="parentElement">The parent element to search within.</param>
     /// <param name="elementName">The name of the element to find within the parent.</param>
     /// <returns>The found element of type T, or null if not found.</returns>
-    public T? FindElementInParent<T>(IEdmElement parentElement, string elementName) where T : class, IEdmElement
+   
+    
+    private T? FindElementInParent<T>(IEdmElement parentElement, string elementName) where T : class, IEdmElement
     {
         var element = parentElement.Children.OfType<T>()
             .FirstOrDefault(child => child.Name == elementName);
             
         if (element == null)
         {
-            Console.WriteLine($"Warning: Unable to find element '{elementName}' of type {typeof(T).Name} in parent '{parentElement.Name}'.");
+            Log.Warning("Unable to find element {ElementName} of type {ElementType} in parent {ParentName}", elementName, typeof(T).Name, parentElement.Name);
             return null;
         }
         
@@ -151,6 +155,7 @@ public class ModelResolutionContext
     /// <param name="targetTypeName">The name of the type to search within.</param>
     /// <param name="elementName">The name of the element to find within that type.</param>
     /// <returns>The found element of type T, or null if not found.</returns>
+    [Obsolete("Use ResolveRelativeReference instead.")]
     public T? FindElementInType<T>(string targetTypeName, string elementName) where T : class, IEdmElement
     {
         // Parse the target type name to remove Collection() wrapper if present
@@ -166,7 +171,7 @@ public class ModelResolutionContext
             
         if (targetType == null)
         {
-            Console.WriteLine($"Warning: Unable to find target type '{typeName}'.");
+            Log.Warning("Unable to find target type {TypeName}", typeName);
             return null;
         }
         
@@ -201,7 +206,7 @@ public class ModelResolutionContext
             current = current.Parent;
         }
         
-        Console.WriteLine($"Warning: Unable to find element '{elementName}' of type {typeof(T).Name} in context of '{contextElement.Name}'.");
+        Log.Warning("Unable to find element {ElementName} of type {ElementType} in context of {ContextElementName}", elementName, typeof(T).Name, contextElement.Name);
         return null;
     }
 

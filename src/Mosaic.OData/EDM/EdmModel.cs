@@ -1,4 +1,5 @@
 using Mosaic.OData.CSDL;
+using Serilog;
 
 namespace Mosaic.OData.EDM;
 
@@ -37,24 +38,31 @@ public class EdmModel
             switch (token)
             {
                 case CsdlToken.Start start:
-                    var element = CreateModelElement(context, start.ElementName, start.Attributes);
-                    if (element != null)
+                    try
                     {
-                        // Find the first Schema element regardless of whether it's marked as root
-                        if (element is Schema schema && rootSchema == null)
+                        var element = CreateModelElement(context, start.ElementName, start.Attributes);
+                        if (element != null)
                         {
-                            rootSchema = schema;
+                            // Find the first Schema element regardless of whether it's marked as root
+                            if (element is Schema schema && rootSchema == null)
+                            {
+                                rootSchema = schema;
+                            }
+                            
+                            // Set parent-child relationships
+                            var parent = context.CurrentParent;
+                            if (parent is EdmElement parentElement)
+                            {
+                                parentElement.AddChild(element);
+                            }
+                            
+                            context.PushElement(element);
                         }
-                        
-                        // Set parent-child relationships
-                        var parent = context.CurrentParent;
-                        if (parent is EdmElementBase parentBase && element is EdmElementBase elementBase)
-                        {
-                            parentBase.AddChild(elementBase);
-                            elementBase.SetParent(parentBase);
-                        }
-                        
-                        context.PushElement(element);
+                    }
+                    catch (EdmElementCreationException ex)
+                    {
+                        Log.Warning("Skipping {ElementName} element - {Message}", start.ElementName, ex.Message);
+                        // Continue processing other elements - this allows partial model building
                     }
                     break;
                     
@@ -91,45 +99,52 @@ public class EdmModel
     }
 
     /// <summary>
+    /// Static dictionary mapping element names to their factory methods for better performance.
+    /// </summary>
+    private static readonly Dictionary<string, Func<ModelBuilderContext, IReadOnlyDictionary<string, string>, IEdmElement?>> _elementFactories = new()
+    {
+        // EDMX wrapper elements
+        ["Edmx"] = Edmx.Create,
+        ["DataServices"] = DataServices.Create,
+        ["Reference"] = Reference.Create,
+        ["Include"] = Include.Create,
+        ["IncludeAnnotations"] = IncludeAnnotations.Create,
+        
+        // Core EDM elements
+        ["Action"] = Action.Create,
+        ["ActionImport"] = ActionImport.Create,
+        ["Annotation"] = Annotation.Create,
+        ["Annotations"] = Annotations.Create,
+        ["ComplexType"] = ComplexType.Create,
+        ["EntityContainer"] = EntityContainer.Create,
+        ["EntitySet"] = EntitySet.Create,
+        ["EntityType"] = EntityType.Create,
+        ["EnumType"] = EnumType.Create,
+        ["Function"] = Function.Create,
+        ["FunctionImport"] = FunctionImport.Create,
+        ["Key"] = Key.Create,
+        ["Member"] = Member.Create,
+        ["NavigationProperty"] = NavigationProperty.Create,
+        ["NavigationPropertyBinding"] = NavigationPropertyBinding.Create,
+        ["OnDelete"] = OnDelete.Create,
+        ["Parameter"] = Parameter.Create,
+        ["Property"] = Property.Create,
+        ["PropertyRef"] = PropertyRef.Create,
+        ["ReferentialConstraint"] = ReferentialConstraint.Create,
+        ["ReturnType"] = ReturnType.Create,
+        ["Schema"] = Schema.Create,
+        ["Singleton"] = Singleton.Create,
+        ["Term"] = Term.Create,
+        ["TypeDefinition"] = TypeDefinition.Create,
+    };
+
+    /// <summary>
     /// Creates a model element based on the element name and attributes.
     /// </summary>
     private static IEdmElement? CreateModelElement(ModelBuilderContext context, string elementName, IReadOnlyDictionary<string, string> attributes)
     {
-        return elementName switch
-        {
-            // EDMX wrapper elements
-            "Edmx" => Edmx.Create(context, attributes),
-            "DataServices" => DataServices.Create(context, attributes),
-            "Reference" => Reference.Create(context, attributes),
-            "Include" => Include.Create(context, attributes),
-            
-            // Core EDM elements
-            "Schema" => Schema.Create(context, attributes),
-            "EntityType" => EntityType.Create(context, attributes),
-            "ComplexType" => ComplexType.Create(context, attributes),
-            "EnumType" => EnumType.Create(context, attributes),
-            "TypeDefinition" => TypeDefinition.Create(context, attributes),
-            "Property" => Property.Create(context, attributes),
-            "NavigationProperty" => NavigationProperty.Create(context, attributes),
-            "Key" => Key.Create(context, attributes),
-            "PropertyRef" => PropertyRef.Create(context, attributes),
-            "ReferentialConstraint" => ReferentialConstraint.Create(context, attributes),
-            "OnDelete" => OnDelete.Create(context, attributes),
-            "Member" => Member.Create(context, attributes),
-            "Action" => Action.Create(context, attributes),
-            "Function" => Function.Create(context, attributes),
-            "Parameter" => Parameter.Create(context, attributes),
-            "ReturnType" => ReturnType.Create(context, attributes),
-            "EntityContainer" => EntityContainer.Create(context, attributes),
-            "EntitySet" => EntitySet.Create(context, attributes),
-            "Singleton" => Singleton.Create(context, attributes),
-            "ActionImport" => ActionImport.Create(context, attributes),
-            "FunctionImport" => FunctionImport.Create(context, attributes),
-            "NavigationPropertyBinding" => NavigationPropertyBinding.Create(context, attributes),
-            "Term" => Term.Create(context, attributes),
-            "Annotation" => Annotation.Create(context, attributes),
-            "Annotations" => Annotations.Create(context, attributes),
-            _ => null // Unknown elements are ignored
-        };
+        return _elementFactories.TryGetValue(elementName, out var factory) 
+            ? factory(context, attributes) 
+            : null; // Unknown elements are ignored
     }
 }

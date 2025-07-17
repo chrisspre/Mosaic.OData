@@ -3,7 +3,7 @@ namespace Mosaic.OData.EDM;
 /// <summary>
 /// Represents an EDM Parameter element.
 /// </summary>
-public sealed class Parameter : EdmElementBase, IModelElementFactory<Parameter>
+public sealed class Parameter : EdmElement, IModelElementFactory<Parameter>
 {
     private Parameter(string name, string type, bool nullable) : base(name)
     {
@@ -38,9 +38,9 @@ public sealed class Parameter : EdmElementBase, IModelElementFactory<Parameter>
     /// <inheritdoc />
     public static Parameter Create(ModelBuilderContext context, IReadOnlyDictionary<string, string> attributes)
     {
-        var name = attributes["Name"];
-        var type = attributes["Type"];
-        var nullable = bool.Parse(attributes.GetValueOrDefault("Nullable", "true"));
+        var name = attributes.GetRequiredOrDefault("Name", $"<MissingName_{Guid.NewGuid():N}>");
+        var type = attributes.GetRequiredOrDefault("Type", "<MissingType>");
+        var nullable = attributes.ParseOrDefault("Nullable", true);
 
         return new Parameter(name, type, nullable);
     }

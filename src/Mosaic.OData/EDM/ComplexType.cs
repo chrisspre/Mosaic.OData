@@ -3,7 +3,7 @@ namespace Mosaic.OData.EDM;
 /// <summary>
 /// Represents an EDM ComplexType element.
 /// </summary>
-public sealed class ComplexType : EdmElementBase, IModelElementFactory<ComplexType>
+public sealed class ComplexType : EdmElement, IModelElementFactory<ComplexType>
 {
     private ComplexType? _baseType;
 
@@ -62,14 +62,14 @@ public sealed class ComplexType : EdmElementBase, IModelElementFactory<ComplexTy
         // Handle BaseType reference resolution
         if (attributes.TryGetValue("BaseType", out var baseTypeRef))
         {
-            context.AddDeferredAction(new DeferredAction(complexType, resolutionContext =>
+            context.AddDeferredAction(100, complexType, resolutionContext =>
             {
                 var baseType = resolutionContext.ResolveReference<ComplexType>(baseTypeRef);
                 if (baseType != null)
                 {
                     complexType.SetBaseType(baseType);
                 }
-            }), priority: 100); // Lower priority to ensure types are created first
+            }); // Lower priority to ensure types are created first
         }
 
         return complexType;

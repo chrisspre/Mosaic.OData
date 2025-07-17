@@ -3,7 +3,7 @@ namespace Mosaic.OData.EDM;
 /// <summary>
 /// Represents an EDMX Reference element.
 /// </summary>
-public sealed class Reference : EdmElementBase, IModelElementFactory<Reference>
+public sealed class Reference : EdmElement, IModelElementFactory<Reference>
 {
     private Reference(string uri) : base("Reference")
     {

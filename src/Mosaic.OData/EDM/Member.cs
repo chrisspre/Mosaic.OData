@@ -3,7 +3,7 @@ namespace Mosaic.OData.EDM;
 /// <summary>
 /// Represents an EDM Member element within an EnumType.
 /// </summary>
-public sealed class Member : EdmElementBase, IModelElementFactory<Member>
+public sealed class Member : EdmElement, IModelElementFactory<Member>
 {
     private Member(string name, long? value) : base(name)
     {

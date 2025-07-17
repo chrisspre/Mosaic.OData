@@ -3,7 +3,7 @@ namespace Mosaic.OData.EDM;
 /// <summary>
 /// Represents an EDM Function element.
 /// </summary>
-public sealed class Function : EdmElementBase, IModelElementFactory<Function>
+public sealed class Function : EdmElement, IModelElementFactory<Function>
 {
     private Path<IEdmElement>? _entitySetPath;
 
@@ -60,9 +60,9 @@ public sealed class Function : EdmElementBase, IModelElementFactory<Function>
     /// <inheritdoc />
     public static Function Create(ModelBuilderContext context, IReadOnlyDictionary<string, string> attributes)
     {
-        var name = attributes["Name"];
-        var isBound = bool.Parse(attributes.GetValueOrDefault("IsBound", "false"));
-        var isComposable = bool.Parse(attributes.GetValueOrDefault("IsComposable", "true"));
+        var name = attributes.GetRequiredOrDefault("Name", $"<MissingName_{Guid.NewGuid():N}>");
+        var isBound = attributes.ParseOrDefault("IsBound", false);
+        var isComposable = attributes.ParseOrDefault("IsComposable", true);
         var entitySetPathExpression = attributes.GetValueOrDefault("EntitySetPath");
 
         var function = new Function(name, isBound, isComposable, entitySetPathExpression);
@@ -70,14 +70,14 @@ public sealed class Function : EdmElementBase, IModelElementFactory<Function>
         // Handle EntitySetPath resolution if present
         if (entitySetPathExpression != null)
         {
-            context.AddDeferredAction(new DeferredAction(function, resolutionContext =>
+            context.AddDeferredAction(400, function, resolutionContext =>
             {
                 var entitySetPath = resolutionContext.ResolvePath<IEdmElement>(entitySetPathExpression, function);
                 if (entitySetPath != null)
                 {
                     function.SetEntitySetPath(entitySetPath);
                 }
-            }), priority: 400); // Higher priority since it depends on other elements being established
+            }); // Higher priority since it depends on other elements being established
         }
 
         return function;

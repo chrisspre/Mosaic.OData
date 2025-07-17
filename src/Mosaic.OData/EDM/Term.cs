@@ -3,7 +3,7 @@ namespace Mosaic.OData.EDM;
 /// <summary>
 /// Represents an EDM Term element.
 /// </summary>
-public sealed class Term : EdmElementBase, IModelElementFactory<Term>
+public sealed class Term : EdmElement, IModelElementFactory<Term>
 {
     private Term? _baseTerm;
 
@@ -74,9 +74,9 @@ public sealed class Term : EdmElementBase, IModelElementFactory<Term>
     /// <inheritdoc />
     public static Term Create(ModelBuilderContext context, IReadOnlyDictionary<string, string> attributes)
     {
-        var name = attributes["Name"];
-        var type = attributes["Type"];
-        var nullable = bool.Parse(attributes.GetValueOrDefault("Nullable", "true"));
+        var name = attributes.GetRequiredOrDefault("Name", $"<MissingName_{Guid.NewGuid():N}>");
+        var type = attributes.GetRequiredOrDefault("Type", "<MissingType>");
+        var nullable = attributes.ParseOrDefault("Nullable", true);
         var defaultValue = attributes.GetValueOrDefault("DefaultValue");
         var baseTermReference = attributes.GetValueOrDefault("BaseTerm");
         var appliesTo = attributes.GetValueOrDefault("AppliesTo");
@@ -86,14 +86,14 @@ public sealed class Term : EdmElementBase, IModelElementFactory<Term>
         // Handle BaseTerm reference resolution
         if (baseTermReference != null)
         {
-            context.AddDeferredAction(new DeferredAction(term, resolutionContext =>
+            context.AddDeferredAction(100, term, resolutionContext =>
             {
                 var baseTerm = resolutionContext.ResolveReference<Term>(baseTermReference);
                 if (baseTerm != null)
                 {
                     term.SetBaseTerm(baseTerm);
                 }
-            }), priority: 100); // Lower priority to ensure terms are created first
+            }); // Lower priority to ensure terms are created first
         }
 
         return term;

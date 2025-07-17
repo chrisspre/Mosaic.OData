@@ -3,7 +3,7 @@ namespace Mosaic.OData.EDM;
 /// <summary>
 /// Represents an EDM EnumType element.
 /// </summary>
-public sealed class EnumType : EdmElementBase, IModelElementFactory<EnumType>
+public sealed class EnumType : EdmElement, IModelElementFactory<EnumType>
 {
     private EnumType(string name, string underlyingType, bool isFlags) : base(name)
     {

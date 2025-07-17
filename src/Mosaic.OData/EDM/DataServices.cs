@@ -3,7 +3,7 @@ namespace Mosaic.OData.EDM;
 /// <summary>
 /// Represents an EDMX DataServices element.
 /// </summary>
-public sealed class DataServices : EdmElementBase, IModelElementFactory<DataServices>
+public sealed class DataServices : EdmElement, IModelElementFactory<DataServices>
 {
     private DataServices() : base("DataServices")
     {

@@ -3,7 +3,7 @@ namespace Mosaic.OData.EDM;
 /// <summary>
 /// Represents an EDM EntitySet element.
 /// </summary>
-public sealed class EntitySet : EdmElementBase, IModelElementFactory<EntitySet>
+public sealed class EntitySet : EdmElement, IModelElementFactory<EntitySet>
 {
     private EntitySet(string name, string entityType, bool includeInServiceDocument) : base(name)
     {

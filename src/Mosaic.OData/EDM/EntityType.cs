@@ -3,7 +3,7 @@ namespace Mosaic.OData.EDM;
 /// <summary>
 /// Represents an EDM EntityType element.
 /// </summary>
-public sealed class EntityType : EdmElementBase, IModelElementFactory<EntityType>
+public sealed class EntityType : EdmElement, IModelElementFactory<EntityType>
 {
     private EntityType? _baseType;
 
@@ -60,24 +60,24 @@ public sealed class EntityType : EdmElementBase, IModelElementFactory<EntityType
     /// <inheritdoc />
     public static EntityType Create(ModelBuilderContext context, IReadOnlyDictionary<string, string> attributes)
     {
-        var name = attributes.GetValueOrDefault("Name", "<missing Name>");
-        var isAbstract = bool.Parse(attributes.GetValueOrDefault("Abstract", "false"));
-        var openType = bool.Parse(attributes.GetValueOrDefault("OpenType", "false"));
-        var hasStream = bool.Parse(attributes.GetValueOrDefault("HasStream", "false"));
+        var name = attributes.GetRequiredOrDefault("Name", $"<MissingName_{Guid.NewGuid():N}>");
+        var isAbstract = attributes.ParseOrDefault("Abstract", false);
+        var openType = attributes.ParseOrDefault("OpenType", false);
+        var hasStream = attributes.ParseOrDefault("HasStream", false);
 
         var entityType = new EntityType(name, isAbstract, openType, hasStream);
 
         // Handle BaseType reference resolution
         if (attributes.TryGetValue("BaseType", out var baseTypeRef))
         {
-            context.AddDeferredAction(new DeferredAction(entityType, resolutionContext =>
+            context.AddDeferredAction(100, entityType, resolutionContext =>
             {
                 var baseType = resolutionContext.ResolveReference<EntityType>(baseTypeRef);
                 if (baseType != null)
                 {
                     entityType.SetBaseType(baseType);
                 }
-            }), priority: 100); // Lower priority to ensure types are created first
+            }); // Lower priority to ensure types are created first
         }
 
         return entityType;

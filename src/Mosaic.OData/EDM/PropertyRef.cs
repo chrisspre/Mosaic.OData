@@ -3,7 +3,7 @@ namespace Mosaic.OData.EDM;
 /// <summary>
 /// Represents an EDM PropertyRef element within a Key.
 /// </summary>
-public sealed class PropertyRef : EdmElementBase, IModelElementFactory<PropertyRef>
+public sealed class PropertyRef : EdmElement, IModelElementFactory<PropertyRef>
 {
     private Path<Property>? _property;
 
@@ -52,7 +52,7 @@ public sealed class PropertyRef : EdmElementBase, IModelElementFactory<PropertyR
         var propertyRef = new PropertyRef(name, alias);
 
         // Resolve the property path - the Name attribute is actually a path to the property
-        context.AddDeferredAction(new DeferredAction(propertyRef, resolutionContext =>
+        context.AddDeferredAction(300, propertyRef, resolutionContext =>
         {
             var property = resolutionContext.ResolvePath<Property>(name, propertyRef);
             if (property != null)
@@ -60,7 +60,7 @@ public sealed class PropertyRef : EdmElementBase, IModelElementFactory<PropertyR
                 propertyRef.SetProperty(property);
             }
             // If property resolution fails, the PropertyRef will keep the original name string
-        }), priority: 300); // Higher priority since it depends on properties being established
+        }); // Higher priority since it depends on properties being established
 
         return propertyRef;
     }

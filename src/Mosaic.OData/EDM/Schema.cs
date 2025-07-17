@@ -3,7 +3,7 @@ namespace Mosaic.OData.EDM;
 /// <summary>
 /// Represents an EDM Schema element.
 /// </summary>
-public sealed class Schema : EdmElementBase, IModelElementFactory<Schema>
+public sealed class Schema : EdmElement, IModelElementFactory<Schema>
 {
     private Schema(string name, string? @namespace, string? alias) : base(name)
     {

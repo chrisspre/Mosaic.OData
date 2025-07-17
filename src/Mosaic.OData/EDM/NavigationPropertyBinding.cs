@@ -3,7 +3,7 @@ namespace Mosaic.OData.EDM;
 /// <summary>
 /// Represents an EDM NavigationPropertyBinding element.
 /// </summary>
-public sealed class NavigationPropertyBinding : EdmElementBase, IModelElementFactory<NavigationPropertyBinding>
+public sealed class NavigationPropertyBinding : EdmElement, IModelElementFactory<NavigationPropertyBinding>
 {
     private Path<NavigationProperty>? _path;
     private Path<IEdmElement>? _target;
@@ -61,40 +61,45 @@ public sealed class NavigationPropertyBinding : EdmElementBase, IModelElementFac
     {
         if (!attributes.TryGetValue("Path", out var pathExpression))
         {
-            throw new InvalidOperationException($"NavigationPropertyBinding element is missing required 'Path' attribute. Available attributes: {string.Join(", ", attributes.Keys)}");
+            throw new EdmElementCreationException("NavigationPropertyBinding", $"Missing required 'Path' attribute. Available attributes: {string.Join(", ", attributes.Keys)}");
         }
         
         if (!attributes.TryGetValue("Target", out var targetExpression))
         {
-            throw new InvalidOperationException($"NavigationPropertyBinding element is missing required 'Target' attribute. Available attributes: {string.Join(", ", attributes.Keys)}");
+            throw new EdmElementCreationException("NavigationPropertyBinding", $"Missing required 'Target' attribute. Available attributes: {string.Join(", ", attributes.Keys)}");
         }
 
         var binding = new NavigationPropertyBinding(pathExpression, targetExpression);
 
         // Handle path resolution
-        context.AddDeferredAction(new DeferredAction(binding, resolutionContext =>
+        context.AddDeferredAction(300, binding, resolutionContext =>
         {
             // Path should resolve relative to the EntitySet's EntityType
             // First, find the parent EntitySet
             var entitySet = binding.Parent as EntitySet;
             if (entitySet != null)
             {
-                // Find the EntityType of this EntitySet
-                var entityTypeName = entitySet.EntityType;
-                var navigationProperty = resolutionContext.FindElementInType<NavigationProperty>(entityTypeName, pathExpression);
-                
-                // Target should resolve relative to the EntityContainer
-                var targetElement = resolutionContext.ResolveRelativeReference<IEdmElement>(binding, targetExpression);
-                
-                if (navigationProperty != null && targetElement != null)
+                // Resolve the EntityType of this EntitySet
+                var entityType = resolutionContext.ResolveReference<EntityType>(entitySet.EntityType);
+                if (entityType != null)
                 {
-                    var path = new Path<NavigationProperty>(new IEdmElement[] { navigationProperty });
-                    var target = new Path<IEdmElement>(new IEdmElement[] { targetElement });
-                    binding.SetPaths(path, target);
+                    // Find the NavigationProperty within the EntityType
+                    var navigationProperty = entityType.Children.OfType<NavigationProperty>()
+                        .FirstOrDefault(np => np.Name == pathExpression);
+                    
+                    // Target should resolve relative to the EntityContainer
+                    var targetElement = resolutionContext.ResolveRelativeReference<IEdmElement>(binding, targetExpression);
+                    
+                    if (navigationProperty != null && targetElement != null)
+                    {
+                        var path = new Path<NavigationProperty>(new IEdmElement[] { navigationProperty });
+                        var target = new Path<IEdmElement>(new IEdmElement[] { targetElement });
+                        binding.SetPaths(path, target);
+                    }
                 }
             }
             // If resolution fails, the binding will remain with the original string expressions
-        }), priority: 300); // Higher priority since it depends on navigation properties being established
+        }); // Higher priority since it depends on navigation properties being established
 
         return binding;
     }

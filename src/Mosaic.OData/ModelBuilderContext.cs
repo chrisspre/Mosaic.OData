@@ -34,8 +34,20 @@ public class ModelBuilderContext
     /// <summary>
     /// Adds a deferred action to be executed later during model resolution.
     /// </summary>
+    /// <param name="priority">The priority of the action (lower numbers execute first).</param>
+    /// <param name="element">The element this action is associated with.</param>
+    /// <param name="action">The action to execute during model resolution.</param>
+    public void AddDeferredAction(int priority, IEdmElement element, Action<ModelResolutionContext> action)
+    {
+        _deferredActions.Enqueue(new DeferredAction(element, action), priority);
+    }
+
+    /// <summary>
+    /// Adds a deferred action to be executed later during model resolution.
+    /// </summary>
     /// <param name="action">The action to defer.</param>
     /// <param name="priority">The priority of the action (lower numbers execute first).</param>
+    [Obsolete("Use AddDeferredAction(int priority, IEdmElement element, Action<ModelResolutionContext> action) instead")]
     public void AddDeferredAction(DeferredAction action, int priority = 1000)
     {
         _deferredActions.Enqueue(action, priority);

@@ -3,7 +3,7 @@ namespace Mosaic.OData.EDM;
 /// <summary>
 /// Represents an EDM OnDelete element.
 /// </summary>
-public sealed class OnDelete : EdmElementBase, IModelElementFactory<OnDelete>
+public sealed class OnDelete : EdmElement, IModelElementFactory<OnDelete>
 {
     private OnDelete(string action) : base("OnDelete")
     {

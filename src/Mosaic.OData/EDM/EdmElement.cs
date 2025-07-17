@@ -3,12 +3,12 @@ namespace Mosaic.OData.EDM;
 /// <summary>
 /// Base class for all EDM model elements providing common functionality.
 /// </summary>
-public abstract class EdmElementBase : IEdmElement
+public abstract class EdmElement : IEdmElement
 {
     private readonly List<IEdmElement> _children = new();
     private IEdmElement? _parent;
 
-    protected EdmElementBase(string name)
+    protected EdmElement(string name)
     {
         Name = name ?? throw new ArgumentNullException(nameof(name));
     }
@@ -29,21 +29,17 @@ public abstract class EdmElementBase : IEdmElement
     public abstract string? TargetPathSegment { get; }
 
     /// <summary>
-    /// Sets the parent of this element. Should only be called during model construction.
-    /// </summary>
-    /// <param name="parent">The parent element.</param>
-    internal void SetParent(IEdmElement parent)
-    {
-        _parent = parent;
-    }
-
-    /// <summary>
-    /// Adds a child element. Should only be called during model construction.
+    /// Adds a child element and sets this element as the child's parent.
+    /// Should only be called during model construction.
     /// </summary>
     /// <param name="child">The child element to add.</param>
     internal void AddChild(IEdmElement child)
     {
         _children.Add(child);
+        if (child is EdmElement childElement)
+        {
+            childElement._parent = this;
+        }
     }
 
     /// <summary>

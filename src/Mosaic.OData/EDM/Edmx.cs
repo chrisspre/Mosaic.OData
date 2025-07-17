@@ -3,7 +3,7 @@ namespace Mosaic.OData.EDM;
 /// <summary>
 /// Represents an EDMX Edmx root element.
 /// </summary>
-public sealed class Edmx : EdmElementBase, IModelElementFactory<Edmx>
+public sealed class Edmx : EdmElement, IModelElementFactory<Edmx>
 {
     private Edmx(string version) : base("Edmx")
     {

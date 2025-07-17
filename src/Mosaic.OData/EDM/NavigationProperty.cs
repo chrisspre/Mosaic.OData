@@ -1,23 +1,31 @@
+using Serilog;
+
 namespace Mosaic.OData.EDM;
 
 /// <summary>
 /// Represents an EDM NavigationProperty element.
 /// </summary>
-public sealed class NavigationProperty : EdmElementBase, IModelElementFactory<NavigationProperty>
+public sealed class NavigationProperty : EdmElement, IModelElementFactory<NavigationProperty>
 {
     private Path<NavigationProperty>? _partner;
+    private EntityType? _targetType;
 
-    private NavigationProperty(string name, string type, bool nullable, bool containsTarget) : base(name)
+    private NavigationProperty(string name, string typeReference, bool nullable, bool containsTarget) : base(name)
     {
-        Type = type;
+        TypeReference = typeReference;
         Nullable = nullable;
         ContainsTarget = containsTarget;
     }
 
     /// <summary>
-    /// Gets the type of this navigation property.
+    /// Gets the original type reference string from the CSDL.
     /// </summary>
-    public string Type { get; }
+    public string TypeReference { get; }
+
+    /// <summary>
+    /// Gets the resolved target entity type.
+    /// </summary>
+    public EntityType? TargetType => _targetType;
 
     /// <summary>
     /// Gets a value indicating whether this navigation property can be null.
@@ -40,7 +48,7 @@ public sealed class NavigationProperty : EdmElementBase, IModelElementFactory<Na
         get
         {
             yield return (nameof(Name), Name);
-            yield return (nameof(Type), Type);
+            yield return (nameof(TypeReference), TypeReference);
             if (!Nullable) yield return (nameof(Nullable), Nullable);
             if (ContainsTarget) yield return (nameof(ContainsTarget), ContainsTarget);
         }
@@ -57,30 +65,58 @@ public sealed class NavigationProperty : EdmElementBase, IModelElementFactory<Na
         _partner = partner;
     }
 
+    /// <summary>
+    /// Sets the target entity type. Should only be called during model resolution.
+    /// </summary>
+    internal void SetTargetType(EntityType targetType)
+    {
+        _targetType = targetType;
+    }
+
     /// <inheritdoc />
     public static NavigationProperty Create(ModelBuilderContext context, IReadOnlyDictionary<string, string> attributes)
     {
-        var name = attributes["Name"];
-        var type = attributes["Type"];
-        var nullable = bool.Parse(attributes.GetValueOrDefault("Nullable", "true"));
-        var containsTarget = bool.Parse(attributes.GetValueOrDefault("ContainsTarget", "false"));
+        var name = attributes.GetRequiredOrDefault("Name", $"<MissingName_{Guid.NewGuid():N}>");
+        var type = attributes.GetRequiredOrDefault("Type", "<MissingType>");
+        var nullable = attributes.ParseOrDefault("Nullable", true);
+        var containsTarget = attributes.ParseOrDefault("ContainsTarget", false);
 
         var navigationProperty = new NavigationProperty(name, type, nullable, containsTarget);
+
+        // Handle Type reference resolution (resolve to EntityType)
+        context.AddDeferredAction(100, navigationProperty, resolutionContext =>
+        {
+            var targetType = resolutionContext.ResolveReference<EntityType>(type);
+            if (targetType != null)
+            {
+                navigationProperty.SetTargetType(targetType);
+            }
+        }); // Lower priority to ensure entity types are created first
 
         // Handle Partner path resolution
         if (attributes.TryGetValue("Partner", out var partnerName))
         {
-            context.AddDeferredAction(new DeferredAction(navigationProperty, resolutionContext =>
+            context.AddDeferredAction(200, navigationProperty, resolutionContext =>
             {
-                // Find the partner NavigationProperty in the target type
-                var partner = resolutionContext.FindElementInType<NavigationProperty>(type, partnerName);
-                
-                if (partner != null)
+                // Now we can use the resolved target type to find the partner
+                var targetType = navigationProperty.TargetType;
+                if (targetType != null)
                 {
-                    navigationProperty.SetPartner(new Path<NavigationProperty>(new IEdmElement[] { partner }));
+                    // Look for the partner NavigationProperty in the target EntityType
+                    var partner = targetType.Children.OfType<NavigationProperty>()
+                        .FirstOrDefault(np => np.Name == partnerName);
+                    
+                    if (partner != null)
+                    {
+                        navigationProperty.SetPartner(new Path<NavigationProperty>(new IEdmElement[] { partner }));
+                    }
+                    else
+                    {
+                        Log.Warning("Unable to find partner NavigationProperty {PartnerName} on EntityType {TargetTypeName}", partnerName, targetType.Name);
+                    }
                 }
-                // If partner resolution fails, the NavigationProperty will remain without a partner
-            }), priority: 200); // Higher priority since it depends on paths being established
+                // If target type resolution fails, the NavigationProperty will remain without a partner
+            }); // Higher priority since it depends on the target type being resolved
         }
 
         return navigationProperty;

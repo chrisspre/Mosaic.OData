@@ -3,7 +3,7 @@ namespace Mosaic.OData.EDM;
 /// <summary>
 /// Represents an EDM ReferentialConstraint element.
 /// </summary>
-public sealed class ReferentialConstraint : EdmElementBase, IModelElementFactory<ReferentialConstraint>
+public sealed class ReferentialConstraint : EdmElement, IModelElementFactory<ReferentialConstraint>
 {
     private Path<Property>? _property;
     private Path<Property>? _referencedProperty;
@@ -65,7 +65,7 @@ public sealed class ReferentialConstraint : EdmElementBase, IModelElementFactory
         var constraint = new ReferentialConstraint(propertyPath, referencedPropertyPath);
 
         // Resolve both property paths
-        context.AddDeferredAction(new DeferredAction(constraint, resolutionContext =>
+        context.AddDeferredAction(300, constraint, resolutionContext =>
         {
             var property = resolutionContext.ResolvePath<Property>(propertyPath, constraint);
             var referencedProperty = resolutionContext.ResolvePath<Property>(referencedPropertyPath, constraint);
@@ -75,7 +75,7 @@ public sealed class ReferentialConstraint : EdmElementBase, IModelElementFactory
                 constraint.SetProperties(property, referencedProperty);
             }
             // If either property resolution fails, the constraint will keep the original string paths
-        }), priority: 300); // Higher priority since it depends on properties being established
+        }); // Higher priority since it depends on properties being established
 
         return constraint;
     }

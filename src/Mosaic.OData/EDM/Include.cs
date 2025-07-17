@@ -3,7 +3,7 @@ namespace Mosaic.OData.EDM;
 /// <summary>
 /// Represents an EDMX Include element.
 /// </summary>
-public sealed class Include : EdmElementBase, IModelElementFactory<Include>
+public sealed class Include : EdmElement, IModelElementFactory<Include>
 {
     private Include(string @namespace, string? alias) : base("Include")
     {

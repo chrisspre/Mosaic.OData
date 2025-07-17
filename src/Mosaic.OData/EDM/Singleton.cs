@@ -3,7 +3,7 @@ namespace Mosaic.OData.EDM;
 /// <summary>
 /// Represents an EDM Singleton element.
 /// </summary>
-public sealed class Singleton : EdmElementBase, IModelElementFactory<Singleton>
+public sealed class Singleton : EdmElement, IModelElementFactory<Singleton>
 {
     private Singleton(string name, string type, bool nullable) : base(name)
     {

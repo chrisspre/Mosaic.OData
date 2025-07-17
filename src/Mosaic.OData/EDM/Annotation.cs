@@ -3,7 +3,7 @@ namespace Mosaic.OData.EDM;
 /// <summary>
 /// Represents an EDM Annotation element.
 /// </summary>
-public sealed class Annotation : EdmElementBase, IModelElementFactory<Annotation>
+public sealed class Annotation : EdmElement, IModelElementFactory<Annotation>
 {
     private Annotation(string term, string? qualifier) : base("Annotation")
     {

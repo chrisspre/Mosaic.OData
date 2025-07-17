@@ -3,7 +3,7 @@ namespace Mosaic.OData.EDM;
 /// <summary>
 /// Represents an EDM ReturnType element.
 /// </summary>
-public sealed class ReturnType : EdmElementBase, IModelElementFactory<ReturnType>
+public sealed class ReturnType : EdmElement, IModelElementFactory<ReturnType>
 {
     private ReturnType(string type, bool nullable) : base("ReturnType")
     {
