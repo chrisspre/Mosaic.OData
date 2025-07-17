@@ -9,7 +9,11 @@ this document lists all EDM elements and categorizes their attribute types.
 
 - **Basic Attribute**: Simple value types (strings, booleans, numbers, identifiers)
 - **Reference Attribute**: References to other model elements represented in XML/JSON as qualified names, type names, etc.
+  - **Global Reference**: Fully qualified names that reference elements anywhere in the model
+  - **Relative Reference**: Names that reference elements relative to a specific parent context
 - **Path Attribute**: Path expressions in form of a sequence of model elements represented in XML/JSON as a string with delimiters (e.g., `/`, `.`, `@` ...)
+  - **Absolute Path**: Paths that start from a well-defined root context
+  - **Relative Path**: Paths that are resolved relative to a specific element context
 
 ---
 
@@ -42,14 +46,14 @@ this document lists all EDM elements and categorizes their attribute types.
 - **Alias** - Basic Attribute (simple identifier)
 
 #### `edm:Annotations`
-- **Target** - Path Attribute (target path expression)
+- **Target** - Path Attribute (target path expression) - Absolute Path (can reference any model element)
 - **Qualifier** - Basic Attribute (simple identifier)
 
 ### Entity Model Elements
 
 #### `edm:EntityType`
 - **Name** - Basic Attribute (simple identifier)
-- **BaseType** - Reference Attribute (qualified type name)
+- **BaseType** - Reference Attribute (qualified type name) - Global Reference
 - **Abstract** - Basic Attribute (boolean)
 - **OpenType** - Basic Attribute (boolean)
 - **HasStream** - Basic Attribute (boolean)
@@ -58,7 +62,7 @@ this document lists all EDM elements and categorizes their attribute types.
 - No attributes
 
 #### `edm:PropertyRef`
-- **Name** - Path Attribute (path to structural property)
+- **Name** - Path Attribute (path to structural property) - Relative Path (relative to the containing entity/complex type)
 - **Alias** - Basic Attribute (simple identifier)
 
 #### `edm:Property`
@@ -69,21 +73,21 @@ this document lists all EDM elements and categorizes their attribute types.
 
 #### `edm:NavigationProperty`
 - **Name** - Basic Attribute (simple identifier)
-- **Type** - Reference Attribute (qualified entity type name or collection)
+- **Type** - Reference Attribute (qualified entity type name or collection) - Global Reference
 - **Nullable** - Basic Attribute (boolean)
-- **Partner** - Path Attribute (path to partner navigation property)
+- **Partner** - Path Attribute (path to partner navigation property) - Relative Path (relative to the target entity type specified in Type attribute)
 - **ContainsTarget** - Basic Attribute (boolean)
 
 #### `edm:ReferentialConstraint`
-- **Property** - Path Attribute (path to dependent property)
-- **ReferencedProperty** - Path Attribute (path to principal property)
+- **Property** - Path Attribute (path to dependent property) - Relative Path (relative to the containing navigation property's source entity type)
+- **ReferencedProperty** - Path Attribute (path to principal property) - Relative Path (relative to the containing navigation property's target entity type)
 
 #### `edm:OnDelete`
 - **Action** - Basic Attribute (action enum: Cascade, None, SetNull, SetDefault)
 
 #### `edm:ComplexType`
 - **Name** - Basic Attribute (simple identifier)
-- **BaseType** - Reference Attribute (qualified type name)
+- **BaseType** - Reference Attribute (qualified type name) - Global Reference
 - **Abstract** - Basic Attribute (boolean)
 - **OpenType** - Basic Attribute (boolean)
 
@@ -105,12 +109,12 @@ this document lists all EDM elements and categorizes their attribute types.
 #### `edm:Action`
 - **Name** - Basic Attribute (simple identifier)
 - **IsBound** - Basic Attribute (boolean)
-- **EntitySetPath** - Path Attribute (entity set path expression)
+- **EntitySetPath** - Path Attribute (entity set path expression) - Relative Path (relative to the action's parameters when bound)
 
 #### `edm:Function`
 - **Name** - Basic Attribute (simple identifier)
 - **IsBound** - Basic Attribute (boolean)
-- **EntitySetPath** - Path Attribute (entity set path expression)
+- **EntitySetPath** - Path Attribute (entity set path expression) - Relative Path (relative to the function's parameters when bound)
 - **IsComposable** - Basic Attribute (boolean)
 
 #### `edm:ReturnType`
@@ -126,31 +130,31 @@ this document lists all EDM elements and categorizes their attribute types.
 
 #### `edm:EntityContainer`
 - **Name** - Basic Attribute (simple identifier)
-- **Extends** - Reference Attribute (qualified entity container name)
+- **Extends** - Reference Attribute (qualified entity container name) - Global Reference
 
 #### `edm:EntitySet`
 - **Name** - Basic Attribute (simple identifier)
-- **EntityType** - Reference Attribute (qualified entity type name)
+- **EntityType** - Reference Attribute (qualified entity type name) - Global Reference
 - **IncludeInServiceDocument** - Basic Attribute (boolean)
 
 #### `edm:Singleton`
 - **Name** - Basic Attribute (simple identifier)
-- **Type** - Reference Attribute (qualified entity type name)
+- **Type** - Reference Attribute (qualified entity type name) - Global Reference
 - **Nullable** - Basic Attribute (boolean)
 
 #### `edm:NavigationPropertyBinding`
-- **Path** - Path Attribute (navigation property path expression)
-- **Target** - Path Attribute (target path to entity set/singleton)
+- **Path** - Path Attribute (navigation property path expression) - Relative Path (relative to the containing entity set's entity type)
+- **Target** - Path Attribute (target path to entity set/singleton) - Relative Path (relative to the containing entity container)
 
 #### `edm:ActionImport`
 - **Name** - Basic Attribute (simple identifier)
-- **Action** - Reference Attribute (qualified unbound action name)
-- **EntitySet** - Reference Attribute (entity set name or target path)
+- **Action** - Reference Attribute (qualified unbound action name) - Global Reference
+- **EntitySet** - Reference Attribute (entity set name or target path) - Relative Reference (relative to the containing entity container)
 
 #### `edm:FunctionImport`
 - **Name** - Basic Attribute (simple identifier)
-- **Function** - Reference Attribute (qualified unbound function name)
-- **EntitySet** - Reference Attribute (entity set name or target path)
+- **Function** - Reference Attribute (qualified unbound function name) - Global Reference
+- **EntitySet** - Reference Attribute (entity set name or target path) - Relative Reference (relative to the containing entity container)
 - **IncludeInServiceDocument** - Basic Attribute (boolean)
 
 ### Vocabulary and Annotation Elements

@@ -79,7 +79,7 @@ public class CsdlXmlReader(XmlReader xmlReader) : IDisposable
 
                         foreach (var (key, value) in attributes)
                         {
-                            if (IsAnnotationExpressionAttribute(key))
+                            if (IsAnnotationExpressionAttribute(key, elementName))
                             {
                                 // This is an annotation expression in attribute form
                                 var literalExpression = new Expression.Literal(value);
@@ -168,8 +168,15 @@ public class CsdlXmlReader(XmlReader xmlReader) : IDisposable
         "AnnotationPath", "UrlRef"
     ];
 
-    private static bool IsAnnotationExpressionAttribute(string attributeName)
+    private static bool IsAnnotationExpressionAttribute(string attributeName, string elementName)
     {
+        // Annotation expression attributes only appear in <Annotation> and <PropertyValue> XML elements
+        if (elementName != "Annotation" && elementName != "PropertyValue")
+        {
+            return false;
+        }
+        
+        // Within annotation contexts, check if the attribute is an annotation expression type
         return AnnotationExpressionTypes.Contains(attributeName);
     }
 
